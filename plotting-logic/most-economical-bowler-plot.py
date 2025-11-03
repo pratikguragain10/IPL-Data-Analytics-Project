@@ -44,7 +44,8 @@ def top_economical_bowlers(deliveries, matches):
             overs = stats['balls'] / 6
             eco = stats['runs'] / overs
             economy[bowler] = round(eco, 2)
-            
+
+    # define a helper function instead of lambda
     def get_economy(item):
         return item[1]
 
@@ -72,4 +73,5 @@ plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
 plt.savefig('../plotting-images/most-economical-bowler-plot.png')
 plt.show()
+
 
