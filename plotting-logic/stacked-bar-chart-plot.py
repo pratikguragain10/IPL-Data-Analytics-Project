@@ -85,6 +85,7 @@ plt.ylabel('Matches Played')
 plt.legend(title='Teams', bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.xticks(sorted(calculation.keys()), sorted(calculation.keys()), rotation=45, ha='right')
 plt.tight_layout()
+plt.savefig('../plotting-images/stacked-bar-chart-plot.png')
 plt.show()
 
 
