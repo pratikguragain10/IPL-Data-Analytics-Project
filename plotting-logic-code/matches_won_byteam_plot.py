@@ -1,46 +1,47 @@
-"""This script calculates and plots the number of IPL matches won by each team per season."""
+"""
+Optimized script to calculate and plot the number of IPL matches won by each team per season.
+Uses minimal memory and no `os` module.
+"""
 
-import os
+import csv
 import matplotlib.pyplot as plt
 
-def read_data(folder_path):
-    """Read CSV files from the given folder and return a list of row dictionaries."""
-    data = []
-    for file_name in os.listdir(folder_path):
-        if file_name.endswith('.csv'):
-            file_path = os.path.join(folder_path, file_name)
-            with open(file_path, 'r', encoding='utf-8') as file:
-                lines = file.readlines()
-                headers = lines[0].strip().split(',')
-                for line in lines[1:]:
-                    row_values = line.strip().split(',')
-                    row_dict = {header: row_values[i] for i, header in enumerate(headers)}
-                    data.append(row_dict)
-    return data
+SEASON = 'season'
+WINNER = 'winner'
 
 
-def calculate_matches_won(data):
-    """Calculate the number of matches won by each IPL team per season."""
+def load_matches(matches_file):
+    """
+    Reads matches CSV and returns a nested dictionary mapping season -> team -> matches won.
+    Only stores necessary info to reduce memory usage.
+    """
     matches_won = {}
-    for match in data:
-        team = match['winner']
-        season = int(match['season'])
-        if season not in matches_won:
-            matches_won[season] = {}
-        matches_won[season][team] = matches_won[season].get(team, 0) + 1
+
+    with open(matches_file, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for match in reader:
+            season = int(match[SEASON])
+            team = match[WINNER].strip()
+            if not team:  
+                continue
+
+            if season not in matches_won:
+                matches_won[season] = {}
+
+            matches_won[season][team] = matches_won[season].get(team, 0) + 1
+
     return matches_won
 
 
 def plot_matches_won(matches_won):
-    """Plot a stacked bar chart showing matches won by teams across seasons."""
+    """Plot a stacked bar chart showing matches won by IPL teams across seasons."""
     seasons = sorted(matches_won.keys())
     teams = sorted({team for season_data in matches_won.values() for team in season_data.keys()})
 
     team_counts = {team: [] for team in teams}
     for season in seasons:
         for team in teams:
-            count = matches_won[season].get(team, 0)
-            team_counts[team].append(count)
+            team_counts[team].append(matches_won[season].get(team, 0))
 
     team_colors = {
         'Chennai Super Kings': '#F1C40F',
@@ -59,6 +60,7 @@ def plot_matches_won(matches_won):
     }
 
     bottom = [0] * len(seasons)
+    plt.figure(figsize=(10, 6))
     for team in teams:
         color = team_colors.get(team, None)
         plt.bar(seasons, team_counts[team], bottom=bottom, label=team, color=color)
@@ -74,13 +76,12 @@ def plot_matches_won(matches_won):
     plt.show()
 
 
-def execute():
-    """Execute the full data reading, calculation, and plotting pipeline."""
-    folder = '../sliced-data/sliced_matches'
-    data = read_data(folder)
-    matches_won = calculate_matches_won(data)
+def execute(matches_file):
+    """Execute the full data processing and plotting pipeline."""
+    matches_won = load_matches(matches_file)
     plot_matches_won(matches_won)
 
 
 if __name__ == "__main__":
-    execute()
+    MATCHES_PATH = '../data/matches.csv'
+    execute(MATCHES_PATH)

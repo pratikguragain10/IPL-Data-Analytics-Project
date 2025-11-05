@@ -1,49 +1,47 @@
 """
-This script reads IPL delivery data from sliced CSV files and plots
-the total runs scored by each team using a bar chart.
+Optimized script to calculate and plot the total runs scored by each IPL team.
+Uses minimal memory and no `os` module.
 """
 
-import os
+import csv
 import matplotlib.pyplot as plt
 
-
-def read_data(folder_path):
-    """Read all CSV files in the given folder and return a list of row dictionaries."""
-    data = []
-    for file_name in os.listdir(folder_path):
-        if file_name.endswith('.csv'):
-            file_path = os.path.join(folder_path, file_name)
-            with open(file_path, 'r', encoding='utf-8') as file:
-                lines = file.readlines()
-                headers = lines[0].strip().split(',')
-                for line in lines[1:]:
-                    values = line.strip().split(',')
-                    row_dict = {header: values[i] for i, header in enumerate(headers)}
-                    data.append(row_dict)
-    return data
+TEAM = 'batting_team'
+RUNS = 'total_runs'
 
 
-def calculate_runs(data):
+def load_deliveries(deliveries_file):
+    """
+    Reads the deliveries CSV and returns a list of rows as dictionaries.
+    Only necessary columns are processed.
+    """
+    deliveries = []
+    with open(deliveries_file, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            deliveries.append({
+                TEAM: row[TEAM],
+                RUNS: int(row[RUNS]),
+            })
+    return deliveries
+
+
+def calculate_team_runs(deliveries):
     """Calculate total runs scored by each team."""
     total_team_runs = {}
-    for row in data:
-        team = row['batting_team']
-        runs = int(row['total_runs'])
-        total_team_runs[team] = total_team_runs.get(team, 0) + runs
+    for delivery in deliveries:
+        team = delivery[TEAM]
+        total_team_runs[team] = total_team_runs.get(team, 0) + delivery[RUNS]
     return total_team_runs
 
 
-def execute():
-    """Execute the data reading, calculation, and plotting pipeline."""
-    path = '../sliced-data/sliced_deliveries'
-    data = read_data(path)
-    team_runs = calculate_runs(data)
-
-    teams = list(team_runs.keys())
-    runs = list(team_runs.values())
+def plot_team_runs(total_team_runs):
+    """Plot a bar chart showing total runs scored by each IPL team."""
+    teams = list(total_team_runs.keys())
+    runs = list(total_team_runs.values())
 
     plt.figure(figsize=(10, 5))
-    plt.bar(teams, runs, color='skyblue')
+    plt.bar(teams, runs, color='skyblue', edgecolor='black')
     plt.title('Total Runs Scored by Teams')
     plt.xlabel('Team')
     plt.ylabel('Runs')
@@ -53,5 +51,13 @@ def execute():
     plt.show()
 
 
+def execute(deliveries_file):
+    """Execute the full data processing and plotting pipeline."""
+    deliveries = load_deliveries(deliveries_file)
+    total_team_runs = calculate_team_runs(deliveries)
+    plot_team_runs(total_team_runs)
+
+
 if __name__ == "__main__":
-    execute()
+    DELIVERIES_PATH = '../data/deliveries.csv'
+    execute(DELIVERIES_PATH)

@@ -1,36 +1,44 @@
-"""This script calculates and plots the top 10 most economical bowlers in the IPL 2015 season."""
+"""
+Optimized script to calculate and plot the top 10 most economical bowlers in IPL 2015.
+Uses minimal memory and filters bowlers with at least 12 legal deliveries.
+"""
 
-import os
+import csv
 import matplotlib.pyplot as plt
 
-
-def read_data(folder_path):
-    """Read CSV files from the given folder and return a list of row dictionaries."""
-    data = []
-    for file_name in os.listdir(folder_path):
-        if file_name.endswith('.csv'):
-            file_path = os.path.join(folder_path, file_name)
-            with open(file_path, 'r', encoding='utf-8') as file:
-                lines = file.readlines()
-                headers = lines[0].strip().split(',')
-                for line in lines[1:]:
-                    values = line.strip().split(',')
-                    row_dict = {header: values[i] for i, header in enumerate(headers)}
-                    data.append(row_dict)
-    return data
+MATCH_ID = 'match_id'
+SEASON = 'season'
+BOWLER = 'bowler'
+TOTAL_RUNS = 'total_runs'
+NOBALL_RUNS = 'noball_runs'
+WIDE_RUNS = 'wide_runs'
 
 
-def calculate_top_economical_bowlers(deliveries, matches):
-    """Calculate and return the top 10 most economical bowlers for IPL 2015."""
-    match_ids_2015 = {match['id'] for match in matches if match['season'] == '2015'}
+def load_match_ids(matches_file, target_season='2015'):
+    """Return a set of match IDs for the target season."""
+    match_ids = set()
+    with open(matches_file, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for match in reader:
+            if match[SEASON] == target_season:
+                match_ids.add(match['id'])
+    return match_ids
 
+
+def calculate_top_economical_bowlers(deliveries_file, match_ids, min_legal_balls=12):
+    """Calculate top 10 economical bowlers who bowled at least `min_legal_balls`."""
     bowler_stats = {}
-    for delivery in deliveries:
-        if delivery['match_id'] in match_ids_2015:
-            bowler = delivery['bowler']
-            total_runs = int(delivery['total_runs'])
-            no_ball = int(delivery['noball_runs'])
-            wide = int(delivery['wide_runs'])
+
+    with open(deliveries_file, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for delivery in reader:
+            if delivery[MATCH_ID] not in match_ids:
+                continue
+
+            bowler = delivery[BOWLER]
+            total_runs = int(delivery[TOTAL_RUNS])
+            no_ball = int(delivery[NOBALL_RUNS])
+            wide = int(delivery[WIDE_RUNS])
             is_legal = 1 if (no_ball == 0 and wide == 0) else 0
 
             if bowler not in bowler_stats:
@@ -39,41 +47,42 @@ def calculate_top_economical_bowlers(deliveries, matches):
             bowler_stats[bowler]['runs'] += total_runs
             bowler_stats[bowler]['balls'] += is_legal
 
-    economy = {}
-    for bowler, stats in bowler_stats.items():
-        if stats['balls'] > 0:
-            overs = stats['balls'] / 6
-            economy_rate = stats['runs'] / overs
-            economy[bowler] = round(economy_rate, 2)
+    # Filter bowlers who bowled at least min_legal_balls
+    filtered_bowlers = {b: s for b, s in bowler_stats.items() if s['balls'] >= min_legal_balls}
 
-    sorted_bowlers = sorted(economy.items(), key=lambda item: item[1])[:10]
+    # Calculate economy (per 6-ball over)
+    economy = {b: round(s['runs'] / (s['balls'] / 6), 2) for b, s in filtered_bowlers.items()}
+
+    # Top 10 economical bowlers
+    sorted_bowlers = sorted(economy.items(), key=lambda x: x[1])[:10]
     return sorted_bowlers
 
+
 def plot_top_bowlers(sorted_bowlers):
-    """Plot a bar chart of the top 10 most economical bowlers in IPL 2015."""
-    bowlers = [bowler for bowler, _ in sorted_bowlers]
-    economy_rates = [eco for _, eco in sorted_bowlers]
+    """Plot bar chart for top 10 economical bowlers."""
+    bowlers = [b for b, _ in sorted_bowlers]
+    economy_rates = [e for _, e in sorted_bowlers]
 
     plt.figure(figsize=(10, 5))
-    plt.bar(bowlers, economy_rates, color='orange')
-    plt.title('Top 10 Economical Bowlers in IPL 2015')
+    plt.bar(bowlers, economy_rates, color='orange', edgecolor='black')
+    plt.title('Top 10 Economical Bowlers in IPL 2015 (Min 12 Balls)')
     plt.xlabel('Bowler')
     plt.ylabel('Economy Rate')
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
     plt.savefig('../plotting-images/most-economical-bowler-plot.png')
     plt.show()
-                 
-def execute():
-    """Execute the data reading, calculation, and plotting pipeline."""
-    matches_folder = '../sliced-data/sliced_matches'
-    deliveries_folder = '../sliced-data/sliced_deliveries'
 
-    matches = read_data(matches_folder)
-    deliveries = read_data(deliveries_folder)
 
-    top_bowlers = calculate_top_economical_bowlers(deliveries, matches)
+def execute(matches_file, deliveries_file):
+    """Run the full pipeline."""
+    match_ids = load_match_ids(matches_file)
+    top_bowlers = calculate_top_economical_bowlers(deliveries_file, match_ids)
     plot_top_bowlers(top_bowlers)
 
+
 if __name__ == "__main__":
-    execute()
+    MATCHES_PATH = '../data/matches.csv'
+    DELIVERIES_PATH = '../data/deliveries.csv'
+
+    execute(MATCHES_PATH, DELIVERIES_PATH)

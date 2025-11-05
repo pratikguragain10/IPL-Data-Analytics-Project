@@ -1,6 +1,8 @@
-"""This script calculates and plots the extra runs conceded per IPL team in the 2016 season."""
+"""
+Optimized script to calculate and plot extra runs conceded per IPL team in 2016.
+Uses minimal memory and no `os` module.
+"""
 
-import os
 import csv
 import matplotlib.pyplot as plt
 
@@ -10,37 +12,45 @@ BOWLING_TEAM = 'bowling_team'
 EXTRA_RUNS = 'extra_runs'
 
 
-def calculate_extra_runs(deliveries_folder, matches_folder):
-    """Calculate total extra runs conceded by each team during IPL 2016."""
-    match_ids_2016 = set()
-    for file_name in os.listdir(matches_folder):
-        if file_name.endswith('.csv'):
-            with open(os.path.join(matches_folder, file_name), 'r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for match in reader:
-                    if match[SEASON] == '2016':
-                        match_ids_2016.add(match['id'])
+def load_match_seasons(matches_file):
+    """
+    Reads match file and returns a dictionary mapping match_id to season.
+    Only store necessary info to reduce memory usage.
+    """
+    match_season_map = {}
+    with open(matches_file, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for match in reader:
+            match_season_map[match['id']] = match[SEASON]
+    return match_season_map
 
+
+def calculate_extra_runs(deliveries_file, match_season_map, target_season='2016'):
+    """Calculate total extra runs conceded per team for a given season."""
     extras_per_team = {}
-    for file_name in os.listdir(deliveries_folder):
-        if file_name.endswith('.csv'):
-            with open(os.path.join(deliveries_folder, file_name), 'r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for delivery in reader:
-                    if delivery[MATCH_ID] in match_ids_2016:
-                        team = delivery[BOWLING_TEAM]
-                        extras = int(delivery[EXTRA_RUNS])
-                        extras_per_team[team] = extras_per_team.get(team, 0) + extras
+
+    with open(deliveries_file, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for delivery in reader:
+            match_id = delivery[MATCH_ID]
+            # Skip deliveries not in the target season
+            if match_season_map.get(match_id) != target_season:
+                continue
+
+            team = delivery[BOWLING_TEAM]
+            extras = int(delivery[EXTRA_RUNS])
+            extras_per_team[team] = extras_per_team.get(team, 0) + extras
+
     return extras_per_team
 
 
 def plot_extra_runs(extras_per_team):
-    """Plot a bar chart showing the extra runs conceded per IPL team."""
+    """Plot a bar chart showing extra runs conceded per IPL team."""
     teams = list(extras_per_team.keys())
     extras = list(extras_per_team.values())
 
-    plt.figure(figsize=(7, 5))
-    plt.bar(teams, extras, color='orange')
+    plt.figure(figsize=(8, 5))
+    plt.bar(teams, extras, color='orange', edgecolor='black')
     plt.title('Extra Runs Conceded per Team (IPL 2016)')
     plt.xlabel('Teams')
     plt.ylabel('Extra Runs')
@@ -50,14 +60,14 @@ def plot_extra_runs(extras_per_team):
     plt.show()
 
 
-def execute():
+def execute(matches_file, deliveries_file):
     """Execute the data processing and plotting pipeline."""
-    deliveries_folder = '../sliced-data/sliced_deliveries'
-    matches_folder = '../sliced-data/sliced_matches'
-
-    extras_per_team = calculate_extra_runs(deliveries_folder, matches_folder)
+    match_season_map = load_match_seasons(matches_file)
+    extras_per_team = calculate_extra_runs(deliveries_file, match_season_map)
     plot_extra_runs(extras_per_team)
 
-
 if __name__ == "__main__":
-    execute()
+    MATCHES_PATH = '../data/matches.csv'
+    DELIVERIES_PATH = '../data/deliveries.csv'
+
+    execute(MATCHES_PATH, DELIVERIES_PATH)

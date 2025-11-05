@@ -1,61 +1,68 @@
 """
-This script calculates and plots the number of IPL matches played by each team per
-season using a stacked bar chart.
+Optimized script to calculate and plot the number of IPL matches played by each team per season.
+Uses minimal memory and no `os` module.
 """
 
-import os
+import csv
 import matplotlib.pyplot as plt
 
-
-def read_data(folder_path):
-    """Read CSV files from the given folder and return a list of dictionaries for each row."""
-    data = []
-    for file_name in os.listdir(folder_path):
-        if file_name.endswith('.csv'):
-            file_path = os.path.join(folder_path, file_name)
-            with open(file_path, 'r', encoding='utf-8') as file:
-                lines = file.readlines()
-                headers = lines[0].strip().split(',')
-                for line in lines[1:]:
-                    values = line.strip().split(',')
-                    row_dict = {header: values[i] for i, header in enumerate(headers)}
-                    data.append(row_dict)
-    return data
+SEASON = 'season'
+TEAM1 = 'team1'
+TEAM2 = 'team2'
 
 
-def calculate_stacked(data):
-    """Calculate the number of matches played by each team per season."""
-    calculations = {}
-    for row in data:
-        team1 = row['team1']
-        team2 = row['team2']
-        season = int(row['season'])
+def load_matches(matches_file):
+    """
+    Reads the matches CSV and returns a list of rows as dictionaries.
+    Only necessary columns are processed.
+    """
+    matches = []
+    with open(matches_file, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            matches.append({
+                SEASON: int(row[SEASON]),
+                TEAM1: row[TEAM1],
+                TEAM2: row[TEAM2],
+            })
+    return matches
 
-        if season not in calculations:
-            calculations[season] = {}
+
+def calculate_matches_played(matches):
+    """
+    Calculate the number of matches played by each team per season.
+    Returns a nested dictionary: {season: {team: matches_played}}
+    """
+    matches_played = {}
+    for match in matches:
+        season = match[SEASON]
+        team1 = match[TEAM1]
+        team2 = match[TEAM2]
+
+        if season not in matches_played:
+            matches_played[season] = {}
 
         for team in [team1, team2]:
-            calculations[season][team] = calculations[season].get(team, 0) + 1
+            matches_played[season][team] = matches_played[season].get(team, 0) + 1
 
-    return calculations
+    return matches_played
 
 
-def plot_stacked(calculated):
-    """Plot a stacked bar chart showing the number of matches played by each team per season."""
-    seasons = sorted(calculated.keys())
-    teams = sorted({team for season_data in calculated.values() for team in season_data.keys()})
-    team_games = {team: [] for team in teams}
+def plot_matches_played(matches_played):
+    """Plot a stacked bar chart showing matches played by each team per season."""
+    seasons = sorted(matches_played.keys())
+    teams = sorted({team for season_data in matches_played.values() for team in season_data.keys()})
+    team_counts = {team: [] for team in teams}
 
     for season in seasons:
         for team in teams:
-            count = calculated[season].get(team, 0)
-            team_games[team].append(count)
+            team_counts[team].append(matches_played[season].get(team, 0))
 
     team_colors = {
-        'Chennai Super Kings': '#F1C40F',   # yellow
-        'Mumbai Indians': '#1F77B4',        # blue
-        'Kolkata Knight Riders': '#6C3483', # purple
-        'Royal Challengers Bangalore': '#E74C3C', # red
+        'Chennai Super Kings': '#F1C40F',
+        'Mumbai Indians': '#1F77B4',
+        'Kolkata Knight Riders': '#6C3483',
+        'Royal Challengers Bangalore': '#E74C3C',
         'Rajasthan Royals': '#AF7AC5',
         'Sunrisers Hyderabad': '#E67E22',
         'Delhi Daredevils': '#3498DB',
@@ -69,30 +76,40 @@ def plot_stacked(calculated):
 
     bottom = [0] * len(seasons)
     for team in teams:
-        color = team_colors.get(team, None)
-        plt.bar(seasons, team_games[team], bottom=bottom, label=team, color=color)
-        bottom = [bottom[i] + team_games[team][i] for i in range(len(bottom))]
+        color = team_colors.get(team)
+        plt.bar(seasons, team_counts[team], bottom=bottom, label=team, color=color)
+        bottom = [bottom[i] + team_counts[team][i] for i in range(len(bottom))]
 
 
-def execute():
+def execute(matches_file):
     """Execute the full data processing and plotting pipeline."""
-    matches_folder = '../sliced-data/sliced_matches'
-
-    data = read_data(matches_folder)
-    calculations = calculate_stacked(data)
+    matches = load_matches(matches_file)
+    matches_played = calculate_matches_played(matches)
 
     plt.figure(figsize=(12, 6))
-    plot_stacked(calculations)
+    plot_matches_played(matches_played)
 
-    plt.title('Number of Matches Played by Each Team (By Season)')
+    plt.title(
+        'Number of Matches Played by Each Team (By Season)'
+    )
     plt.xlabel('Season')
     plt.ylabel('Matches Played')
-    plt.legend(title='Teams', bbox_to_anchor=(1.05, 1), loc='upper left')
-    plt.xticks(sorted(calculations.keys()), sorted(calculations.keys()), rotation=45, ha='right')
+    plt.legend(
+        title='Teams',
+        bbox_to_anchor=(1.05, 1),
+        loc='upper left'
+    )
+    plt.xticks(
+        sorted(matches_played.keys()),
+        sorted(matches_played.keys()),
+        rotation=45,
+        ha='right'
+    )
     plt.tight_layout()
     plt.savefig('../plotting-images/stacked-bar-chart-plot.png')
     plt.show()
 
 
 if __name__ == "__main__":
-    execute()
+    MATCHES_PATH = '../data/matches.csv'
+    execute(MATCHES_PATH)

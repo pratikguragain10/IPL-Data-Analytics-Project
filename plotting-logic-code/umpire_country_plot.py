@@ -1,17 +1,20 @@
 """
-Plot number of foreign umpires by country using only umpire_countries.csv.
-No pandas used.
+Optimized script to plot the number of foreign umpires by country using
+only umpire_countries.csv. No pandas used. Minimal memory usage.
 """
 
 import csv
 import matplotlib.pyplot as plt
 
 
-def read_umpire_countries(mapping_path):
-    """Read umpire-country mappings and count non-Indian umpires by country."""
+def load_umpire_countries(mapping_file):
+    """
+    Read umpire-country mappings and count non-Indian umpires by country.
+    Returns a dictionary {country: count}.
+    """
     country_count = {}
-    with open(mapping_path, "r", encoding="utf-8") as fh:
-        reader = csv.DictReader(fh)
+    with open(mapping_file, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
         for row in reader:
             umpire = row.get("umpire", "").strip()
             country = row.get("country", "").strip()
@@ -22,7 +25,7 @@ def read_umpire_countries(mapping_path):
 
 
 def plot_umpire_countries(country_count):
-    """Plot a bar chart of number of foreign umpires by country."""
+    """Plot a bar chart showing number of non-Indian umpires by country."""
     if not country_count:
         print("No foreign umpire data available to plot.")
         return
@@ -41,10 +44,9 @@ def plot_umpire_countries(country_count):
     plt.show()
 
 
-def execute():
-    """Execute the data reading, calculation, and plotting pipeline."""
-    mapping_csv = "../data/umpire_countries.csv"
-    country_counts = read_umpire_countries(mapping_csv)
+def execute(mapping_file):
+    """Execute the data processing and plotting pipeline."""
+    country_counts = load_umpire_countries(mapping_file)
     print(f"\nFound {len(country_counts)} foreign countries:")
     for c, n in country_counts.items():
         print(f"  {c}: {n}")
@@ -52,4 +54,5 @@ def execute():
 
 
 if __name__ == "__main__":
-    execute()
+    UMPIRE_COUNTRIES_PATH = "../data/umpire_countries.csv"
+    execute(UMPIRE_COUNTRIES_PATH)
