@@ -31,12 +31,12 @@ pip install -r requirements.txt
 ± Project Structure
 
 Folder / File	         Description
-data/	Raw CSV/XLSX      data files
-plotting-logic-code/	  Python scripts for analysis
-plotting-images/	      Generated plot images (ignored by Git)
-requirements.txt	      Lists required Python libraries
-.gitignore	              Ignores data files, plots, venv, IDE files
-README.md	              Project documentation
+data/	Raw CSV/XLSX      (data files)
+plotting-logic-code/	  (Python scripts for analysis)
+plotting-images/	      (Generated plot images (ignored by Git))
+requirements.txt	      (Lists required Python libraries)
+.gitignore	            (Ignores data files, plots, venv, IDE files)
+README.md	              (Project documentation)
 
 
 ▶ How to Run
@@ -52,13 +52,13 @@ Replace umpire_country_plot.py with any other script in plotting-logic-code/.
 ± Scripts Overview
 
 Script Name	                    Description
-umpire_country_plot.py	         Reads data/umpire_countries.csv and plots number of foreign umpires
-team_run_plot.py	             Plots total runs per team
-matches_won_byteam_plot.py	     Visualizes number of matches won by each team
-stacked_bar_chart_plot.py	     Creates stacked bar charts for different match statistics
-total_matches_year_plot.py	     Plots total matches per year
-top_10_rcb_batsman_plot.py	     Visualizes top 10 RCB batsmen stats
-most_economical_bowler_plot.py	 Plots top economical bowlers
+umpire_country_plot.py	         (Reads data/umpire_countries.csv and plots number of foreign umpires)
+team_run_plot.py	               (Plots total runs per team)
+matches_won_byteam_plot.py	     (Visualizes number of matches won by each team)
+stacked_bar_chart_plot.py	       (Creates stacked bar charts for different match statistics)
+total_matches_year_plot.py	     (Plots total matches per year)
+top_10_rcb_batsman_plot.py	     (Visualizes top 10 RCB batsmen stats)
+most_economical_bowler_plot.py	 (Plots top economical bowlers)
 
 All scripts follow the same pattern:
 
