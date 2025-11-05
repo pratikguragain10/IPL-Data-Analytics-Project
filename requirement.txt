@@ -1,0 +1,4 @@
+- pylint
+- virtualenv
+- matplotlib
+- csv
