@@ -43,7 +43,7 @@ README.md	              Project documentation
 
 Run any script from the project root:
 
-# Example: run umpire country plot script
+Example: run umpire country plot script
 python plotting-logic-code/umpire_country_plot.py
 
 
